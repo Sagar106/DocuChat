@@ -1,19 +1,15 @@
 import Message from "../models/message.model";
-import Chat from "../models/chat.model";
+import { createMessage } from "../service/message.service";
 
 export const sendMessage = async (req, res, next) => {
   try {
     const { chatId, content } = req.body;
 
-    const message = await Message.create({
+    const message = await createMessage({
       chatId,
       userId: req.user._id,
       role: "user",
       content,
-    });
-
-    await Chat.findByIdAndUpdate(chatId, {
-      lastMessage: content,
     });
 
     res.status(201).json(message);
@@ -33,6 +29,8 @@ export const getMessages = async (req, res, next) => {
         createdAt: 1,
       })
       .lean();
+
+    res.json(messages);
   } catch (error) {
     next(error);
   }
