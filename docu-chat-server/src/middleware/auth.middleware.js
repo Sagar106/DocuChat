@@ -1,27 +1,18 @@
-import jwt from "jsonwebtoken";
-import User from "../models/user.model.js";
-
 const protect = async (req, res, next) => {
-  let token;
-
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
-  ) {
-    token = req.headers.authorization.split(" ")[1];
-  }
-
-  if (!token) {
-    return res.status(401).json({ message: "Not authorized" });
-  }
-
   try {
+    const token = req.cookies.accessToken;
+
+    if (!token) {
+      res.status(401);
+      throw new Error("Not authorized");
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     req.user = await User.findById(decoded.id);
 
     next();
   } catch (error) {
-    res.status(401).json({ message: "Token Invalid" });
+    next(error);
   }
 };

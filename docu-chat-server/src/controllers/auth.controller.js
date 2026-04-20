@@ -3,7 +3,10 @@ import generateToken from "../utils/generateToken.js";
 import User from "../models/user.model.js";
 import Token from "../models/token.model.js";
 import generateRefreshToken from "../utils/generateRefreshToken.js";
-import { cookieOptions } from "../utils/cookieOptions.js";
+import {
+  accessCookieOptions,
+  refreshCookieOptions,
+} from "../utils/cookieOptions.js";
 import { verifyGoogleToken } from "../service/googleAuth.service.js";
 
 export const register = async (req, res, next) => {
@@ -37,7 +40,9 @@ export const register = async (req, res, next) => {
       token: refreshToken,
     });
 
-    res.cookie("refreshToken", refreshToken, cookieOptions);
+    res.cookie("accessToken", accessToken, accessCookieOptions);
+
+    res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
     res.status(201).json({
       user: {
@@ -63,7 +68,7 @@ export const login = async (req, res, next) => {
       throw new Error("Invalid credentials");
     }
 
-    const isMatch = bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       res.status(400);
@@ -79,7 +84,9 @@ export const login = async (req, res, next) => {
       token: refreshToken,
     });
 
-    res.cookie("refreshToken", refreshToken, cookieOptions);
+    res.cookie("accessToken", accessToken, accessCookieOptions);
+
+    res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
     res.json({
       user: {
@@ -121,7 +128,9 @@ export const googleLogin = async (req, res, next) => {
       token: refreshToken,
     });
 
-    res.cookie("refeshToken", refreshToken, cookieOptions);
+    res.cookie("accessToken", accessToken, accessCookieOptions);
+
+    res.cookie("refeshToken", refreshToken, refreshCookieOptions);
 
     res.json({
       user: {
@@ -138,7 +147,7 @@ export const googleLogin = async (req, res, next) => {
 
 export const refresh = async (req, res, next) => {
   try {
-    const {refreshToken} = req.cookies;
+    const { refreshToken } = req.cookies;
 
     if (!refreshToken) {
       res.status(401);
@@ -158,33 +167,42 @@ export const refresh = async (req, res, next) => {
 
     const newAccessToken = generateToken(decoded.id);
 
+    res.cookie("accessToken", newAccessToken, accessCookieOptions);
+
+    res.json({ message: "Token refreshed" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const logout = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.cookies;
+
+    await Token.deleteOne({
+      token: refreshToken,
+    });
+
+    res.clearCookie("accessToken");
+
+    res.clearCookie("refreshToken");
+
     res.json({
-      accessToken: newAccessToken,
+      message: "Logged out",
     });
   } catch (error) {
     next(error);
   }
 };
 
-export const logout = async (
-  req,
-  res,
-  next
-) => {
+export const getMe = async (req, res, next) => {
   try {
-    const {refreshToken} = req.cookies;
-
-    await Token.deleteOne({
-      token:
-        refreshToken
-    });
-
-    res.clearCookie(
-      "refreshToken"
-    );
-
     res.json({
-      message: "Logged out"
+      user: {
+        _id: req.user._id,
+        name: req.user.name,
+        email: req.user.email,
+      },
     });
   } catch (error) {
     next(error);
