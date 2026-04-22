@@ -1,4 +1,4 @@
-import { Children, useContext, useEffect } from "react";
+import { Children, useContext, useEffect, useState } from "react";
 import { createContext } from "react";
 import { getCurrentUser, loginUser, logoutUser } from "../api/auth.api";
 
@@ -11,7 +11,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(null);
-  const [error, setError] = useState(nukk);
+  const [error, setError] = useState(null);
 
   const login = async (data) => {
     try {
