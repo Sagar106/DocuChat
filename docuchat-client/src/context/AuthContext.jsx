@@ -1,47 +1,43 @@
-import { Children, useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { createContext } from "react";
 import { getCurrentUser, loginUser, logoutUser } from "../api/auth.api";
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
-  useContext(AuthContext);
+  return useContext(AuthContext);
 };
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const login = async (data) => {
     try {
-      setLoading(true);
-
       await loginUser(data);
 
       const res = await getCurrentUser();
 
       setUser(res.data.user);
     } catch (error) {
-      console.log("Login failed", err);
+      console.log("Login failed", error);
 
-      setError(err.response?.data?.message || "Login failed");
+      setError(error.response?.data?.message || "Login failed");
 
       setUser(null);
     } finally {
-      loading(false);
+      setLoading(false);
     }
   };
 
   const logout = async () => {
     try {
-      setLoading(true);
-
       await logoutUser();
 
       setUser(null);
     } catch (error) {
-      console.error("Logout failed", err);
+      console.error("Logout failed", error);
 
       setError("Logout failed");
     } finally {
@@ -51,7 +47,6 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUser = async () => {
     try {
-      setLoading(true);
       const res = await getCurrentUser();
 
       if (res?.data?.user) {
